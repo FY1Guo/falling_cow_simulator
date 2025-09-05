@@ -26,7 +26,7 @@ def energy(pos, vel):
     potential = MASS * G * pos[1]
     kinetic = 1 / 2 * MASS * np.dot(vel, vel)
     total = potential + kinetic
-    return np.array(potential, kinetic, total)
+    return potential, kinetic, total
 
 
 def new_step(pos, vel, dt=DT):
@@ -66,7 +66,42 @@ def simulate(dt=DT):
             np.array(pe_hist), np.array(ke_hist), np.array(e_hist))
 
 
+t, x, y, vx, vy, pe, ke, e = simulate(DT)
+v = np.sqrt(vx**2 + vy**2)
 
+plt.figure()
+plt.plot(x, y)
+plt.xlabel("x (m)")
+plt.ylabel("y (m)")
+plt.title("Trajectory")
+plt.grid(True)
 
+plt.figure()
+plt.plot(t, y)
+plt.xlabel("t (s)")
+plt.ylabel("y (m)")
+plt.title("Height vs Time")
+plt.grid(True)
 
+plt.figure()
+plt.plot(t, vx, label=r"$v_x$")
+plt.plot(t, vy, label=r"$v_y$")
+plt.plot(t, v, label=r"$v$")
+plt.xlabel("t (s)")
+plt.ylabel("velocity (m/s)")
+plt.title("Velocity vs Time")
+plt.legend()
+plt.grid(True)
+
+plt.figure()
+plt.plot(t, pe, label="PE")
+plt.plot(t, ke, label="KE")
+plt.plot(t, e, label="Total")
+plt.xlabel("t (s)")
+plt.ylabel("energy (J)")
+plt.title("Energies vs Time")
+plt.legend()
+plt.grid(True)
+
+plt.show()
 
