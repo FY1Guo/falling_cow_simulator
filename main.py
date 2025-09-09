@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 MASS = 1000.      # kg
-G = 9.81          # m/s^2
+G = 9.8           # m/s^2
 DRAG_C = 5        # N/(m/s)^2
 
 x0, y0 = 0, 10    # m
@@ -18,19 +18,22 @@ def drag_force(vel):
     return -DRAG_C * vmag * vel
 
 
-def total_force(vel):
-    return drag_force(vel) + np.array([0, -MASS * G])
+def total_force(pos, vel, mass=MASS, g=G, drag_c=DRAG_C):
+    Fg = np.array([0.0, -mass * g])
+    vmag = np.linalg.norm(vel)
+    Fd = -drag_c * vmag * vel if vmag != 0 else np.zeros(2)
+    return Fg + Fd
 
 
-def energy(pos, vel):
-    potential = MASS * G * pos[1]
-    kinetic = 1 / 2 * MASS * np.dot(vel, vel)
+def energy(pos, vel, mass=MASS, g=G):
+    potential = mass * g * max(pos[1], 0.0)
+    kinetic = 0.5 * mass * np.dot(vel, vel)
     total = potential + kinetic
     return potential, kinetic, total
 
 
-def new_step(pos, vel, dt=DT):
-    a = total_force(vel) / MASS
+def new_step(pos, vel, force, dt=DT, mass=MASS):
+    a = force / mass
     vel_new = vel + a * dt
     pos_new = pos + vel * dt
     return pos_new, vel_new
@@ -48,8 +51,17 @@ def simulate(dt=DT):
     pe_hist, ke_hist, e_hist = [pe], [ke], [e]
 
     while pos[1] > 0:
-        pos, vel = new_step(pos, vel, dt)
-        pe, ke, e = energy(pos, vel)
+        F = total_force(pos, vel)
+        pos_new, vel_new = new_step(pos, vel, F, dt=dt)
+        
+        if pos[1] > 0 and pos_new[1] <= 0:
+            frac = pos[1] / (pos[1] - pos_new[1])
+            t += frac * dt
+            impact_pos = pos + frac * (pos_new - pos)
+            impact_pos[1] = 0.0
+            pos, vel = impact_pos, vel + (F / MASS) * (frac * dt)
+            break
+        pos, vel = pos_new, vel_new
         t += dt
 
         t_hist.append(t)
