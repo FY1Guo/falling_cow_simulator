@@ -74,7 +74,7 @@ t, x, y, vx, vy, pe, ke, e = simulate(c=0, dt=DT)
 # Write output file
 with open("trajectory_output.txt", "w") as f:
     for ti, xi, yi in zip(t, x, y):
-        f.write(f"{ti} {xi} {yi}\n")
+        f.write(f"{ti:.3f} {xi:.3f} {yi:.3f}\n")
 
 print("Output written to trajectory_output.txt")
 v = np.sqrt(vx**2 + vy**2)
@@ -83,8 +83,9 @@ plt.figure()
 plt.plot(x, y)
 plt.xlabel("x (m)")
 plt.ylabel("y (m)")
-plt.title("Trajectory with time step 0.01")
+plt.title(f"Trajectory with time step {DT}")
 plt.grid(True)
+plt.savefig("Trajectory.png")
 
 plt.figure()
 plt.plot(t, y)
@@ -92,6 +93,7 @@ plt.xlabel("t (s)")
 plt.ylabel("y (m)")
 plt.title("Height vs Time")
 plt.grid(True)
+plt.savefig("Height_Time.png")
 
 plt.figure()
 plt.plot(t, vx, label=r"$v_x$")
@@ -102,6 +104,7 @@ plt.ylabel("velocity (m/s)")
 plt.title("Velocity vs Time")
 plt.legend()
 plt.grid(True)
+plt.savefig("Velocity_Time.png")
 
 plt.figure()
 plt.plot(t, pe, label="PE")
@@ -112,6 +115,7 @@ plt.ylabel("energy (J)")
 plt.title("Energies vs Time")
 plt.legend()
 plt.grid(True)
+plt.savefig("Energies_Time.png")
 
 plt.show()
 
