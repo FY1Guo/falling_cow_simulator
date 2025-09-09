@@ -3,128 +3,155 @@ import matplotlib.pyplot as plt
 
 
 MASS = 1000.      # kg
-G = 9.8           # m/s^2
+G = 9.81          # m/s^2
 DRAG_C = 5        # N/(m/s)^2
 
 x0, y0 = 0, 10    # m
 vx0, vy0 = 2, 3   # m/s
 DT = 0.01         # s
 
-init_vel = np.array([vx0, vy0])
+init_vel = np.array([vx0, vy0])  # set initial conditions
 init_pos = np.array([x0, y0])
 
-def drag_force(vel, drag_c=DRAG_C):
+def drag_force(vel, c=DRAG_C):             # drag_force = -c*|v|*v
     vmag = np.linalg.norm(vel)
-    if vmag == 0.0 or drag_c == 0.0:
-        return np.zeros(2)
-    return -drag_c * vmag * vel
+    return -c * vmag * vel
 
 
-def total_force(pos, vel, mass=MASS, g=G, drag_c=DRAG_C):
-    Fg = np.array([0.0, -mass * g])
-    Fd = drag_force(vel, drag_c)
-    return Fg + Fd
+def total_force(vel, c=DRAG_C):
+    return drag_force(vel, c) + np.array([0, -MASS * G])
 
 
-def energy(pos, vel, mass=MASS, g=G):
-    y = max(float(pos[1]), 0.0)
-    potential = mass * g * y
-    kinetic = 0.5 * mass * float(np.dot(vel, vel))
+def energy(pos, vel):
+    potential = MASS * G * pos[1]
+    kinetic = 1 / 2 * MASS * np.dot(vel, vel)
     total = potential + kinetic
     return potential, kinetic, total
 
 
-def new_step(pos, vel, force, dt, mass=MASS): #semi-implicit Euler
-    a = force / mass
+def new_step(pos, vel, c=DRAG_C, dt=DT):
+    a = total_force(vel, c) / MASS
     vel_new = vel + a * dt
-    pos_new = pos + vel_new * dt
+    pos_new = pos + vel * dt
     return pos_new, vel_new
 
 
-def simulate(dt=DT):
-    pos = np.array([x0, y0], dtype=float)
-    vel = np.array([vx0, vy0], dtype=float)
-    t = 0.0
-   
-
-    t_hist = [t]
-    x_hist = [pos[0]]
-    y_hist = [pos[1]]
-    vx_hist = [vel[0]]
-    vy_hist = [vel[1]]
+def simulate(c=DRAG_C, dt=DT):
+    pos = np.array([x0, y0])
+    vel = np.array([vx0, vy0])
+    t = 0
     pe, ke, e = energy(pos, vel)
+
+    t_hist = [0]                                # lists for history of variables
+    x_hist, y_hist = [pos[0]], [pos[1]]
+    vx_hist, vy_hist = [vel[0]], [vel[1]]
     pe_hist, ke_hist, e_hist = [pe], [ke], [e]
 
-    while pos[1] > 0.0:
-        F = total_force(pos, vel)
-        pos_new, vel_new = new_step(pos, vel, F, dt)
-        t_new = t + dt
-        
-        if pos[1] > 0.0 and pos_new[1] <= 0.0:
-            frac = pos[1] / (pos[1] - pos_new[1])
-            frac = max(0.0, min(1.0, frac))
-            t_imp = t + frac * dt
-            imp_pos = pos + (pos_new - pos) * frac
-            imp_pos[1] = 0.0
-            a = F / MASS
-            imp_vel = vel + a * (frac * dt)
-
-            t_hist.append(t_imp)
-            x_hist.append(imp_pos[0]); y_hist.append(imp_pos[1])
-            vx_hist.append(imp_vel[0]); vy_hist.append(imp_vel[1])
-            pe, ke, e = energy(imp_pos, imp_vel)
-            pe_hist.append(pe); ke_hist.append(ke); e_hist.append(e)
-            break
-        pos, vel, t = pos_new, vel_new, t_new
+    while pos[1] > 0:                           # simulation loop
+        pos, vel = new_step(pos, vel, c, dt)
+        pe, ke, e = energy(pos, vel)
+        t += dt
 
         t_hist.append(t)
-        x_hist.append(pos[0]); y_hist.append(pos[1])
-        vx_hist.append(vel[0]); vy_hist.append(vel[1])
-        pe, ke, e = energy(pos, vel)
-        pe_hist.append(pe); ke_hist.append(ke); e_hist.append(e)
+        x_hist.append(pos[0])
+        y_hist.append(pos[1])
+        vx_hist.append(vel[0])
+        vy_hist.append(vel[1])
+        pe_hist.append(pe)
+        ke_hist.append(ke)
+        e_hist.append(e)
 
     return (np.array(t_hist), np.array(x_hist), np.array(y_hist), 
             np.array(vx_hist), np.array(vy_hist), 
             np.array(pe_hist), np.array(ke_hist), np.array(e_hist))
 
-if __name__ == "__main__":
-    t, x, y, vx, vy, pe, ke, e = simulate(DT)
 
-    plt.figure()
-    plt.plot(x, y)
-    plt.xlabel("x (m)")
-    plt.ylabel("y (m)")
-    plt.title("Trajectory")
-    plt.grid(True)
-    
-    v = np.sqrt(vx**2 + vy**2)
+"""Start simulation and make plots"""
 
-    plt.figure()
-    plt.plot(t, y)
-    plt.xlabel("t (s)")
-    plt.ylabel("y (m)")
-    plt.title("Height vs Time")
-    plt.grid(True)
+# simulate with the preset drag constant and time step
+t, x, y, vx, vy, pe, ke, e = simulate(DRAG_C, DT)  
+v = np.sqrt(vx**2 + vy**2)
 
-    plt.figure()
-    plt.plot(t, vx, label=r"$v_x$")
-    plt.plot(t, vy, label=r"$v_y$")
-    plt.plot(t, v, label=r"$v$")
-    plt.xlabel("t (s)")
-    plt.ylabel("velocity (m/s)")
-    plt.title("Velocity vs Time")
-    plt.legend()
-    plt.grid(True)
+plt.figure()
+plt.plot(x, y)
+plt.xlabel("x (m)")
+plt.ylabel("y (m)")
+plt.title("Trajectory with time step 0.01")
+plt.grid(True)
 
-    plt.figure()
-    plt.plot(t, pe, label="PE")
-    plt.plot(t, ke, label="KE")
-    plt.plot(t, e, label="Total")
-    plt.xlabel("t (s)")
-    plt.ylabel("energy (J)")
-    plt.title("Energies vs Time")
-    plt.legend()
-    plt.grid(True)
+plt.figure()
+plt.plot(t, y)
+plt.xlabel("t (s)")
+plt.ylabel("y (m)")
+plt.title("Height vs Time")
+plt.grid(True)
 
-    plt.show()
+plt.figure()
+plt.plot(t, vx, label=r"$v_x$")
+plt.plot(t, vy, label=r"$v_y$")
+plt.plot(t, v, label=r"$v$")
+plt.xlabel("t (s)")
+plt.ylabel("velocity (m/s)")
+plt.title("Velocity vs Time")
+plt.legend()
+plt.grid(True)
 
+plt.figure()
+plt.plot(t, pe, label="PE")
+plt.plot(t, ke, label="KE")
+plt.plot(t, e, label="Total")
+plt.xlabel("t (s)")
+plt.ylabel("energy (J)")
+plt.title("Energies vs Time")
+plt.legend()
+plt.grid(True)
+
+plt.show()
+
+
+"""Addressing the questions"""
+
+
+# 7 i.
+print("Initial energy:", e[0]) 
+print("Final energy:", e[-1])
+print("Percentage of the change of energy:", (e[0] - e[-1])/e[0])
+
+
+# 7 ii.
+# simulate with time step=1
+t1, x1, y1, vx1, vy1, pe1, ke1, e1 = simulate(DRAG_C, 1)
+# simulate with time step=0.0001
+t2, x2, y2, vx2, vy2, pe2, ke2, e2 = simulate(DRAG_C, 0.0001)
+
+plt.figure()
+plt.plot(x1, y1)
+plt.xlabel("x (m)")
+plt.ylabel("y (m)")
+plt.title("Trajectory with time step 1")
+plt.grid(True)
+
+plt.figure()
+plt.plot(x2, y2)
+plt.xlabel("x (m)")
+plt.ylabel("y (m)")
+plt.title("Trajectory with time step 0.0001")
+plt.grid(True)
+
+plt.show()
+
+
+# 7 iii.
+# simulate with drag constant = 0
+t3, x3, y3, vx3, vy3, pe3, ke3, e3 = simulate(0, 0.0001)
+
+plt.figure()
+plt.plot(x3, y3)
+plt.xlabel("x (m)")
+plt.ylabel("y (m)")
+plt.title("Trajectory with no air resistance")
+plt.grid(True)
+
+plt.show()
+
+print("The landing point without air resistance is:", (float(x[-1]), float(y[-1])))
