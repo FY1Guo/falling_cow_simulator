@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 
 
 MASS = 1000.      # kg
-G = 9.81          # m/s^2
-DRAG_C = 5        # N/(m/s)^2
+G = 9.8           # m/s^2
+DRAG_C = 0        # N/(m/s)^2
 
-x0, y0 = 0, 10    # m
-vx0, vy0 = 2, 3   # m/s
-DT = 0.01         # s
+x0, y0 = 0, 1000    # m
+vx0, vy0 = 1, 100   # m/s
+DT = 0.001         # s
 
 init_vel = np.array([vx0, vy0])  # set initial conditions
 init_pos = np.array([x0, y0])
@@ -69,7 +69,14 @@ def simulate(c=DRAG_C, dt=DT):
 """Start simulation and make plots"""
 
 # simulate with the preset drag constant and time step
-t, x, y, vx, vy, pe, ke, e = simulate(DRAG_C, DT)  
+t, x, y, vx, vy, pe, ke, e = simulate(c=0, dt=DT)
+
+# Write output file
+with open("trajectory_output.txt", "w") as f:
+    for ti, xi, yi in zip(t, x, y):
+        f.write(f"{ti} {xi} {yi}\n")
+
+print("Output written to trajectory_output.txt")
 v = np.sqrt(vx**2 + vy**2)
 
 plt.figure()
@@ -110,7 +117,7 @@ plt.show()
 
 
 """Addressing the questions"""
-
+"""
 
 # 7 i.
 print("Initial energy:", e[0]) 
@@ -155,3 +162,5 @@ plt.grid(True)
 plt.show()
 
 print("The landing point without air resistance is:", (float(x[-1]), float(y[-1])))
+
+"""
