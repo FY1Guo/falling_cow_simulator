@@ -79,11 +79,26 @@ with open("trajectory_output.txt", "w") as f:
 print("Output written to trajectory_output.txt")
 v = np.sqrt(vx**2 + vy**2)
 
+
+# analytic prediction
+def y_anal(x_anal, x0, y0, vx0, vy0):
+    return y0 + (x_anal-x0) * vy0 / vx0 - 0.5 * G * (x_anal-x0)**2 / vx0**2
+
+def x_final(x0, y0, vx0, vy0):
+    t_final = (vy0 + np.sqrt(vy0**2 + 2*G*y0)) / G
+    return x0 + vx0*t_final
+
+x_list = np.linspace(0, x_final(x0, y0, vx0, vy0), num=100) 
+
+
+
 plt.figure()
-plt.plot(x, y)
+plt.plot(x, y, label="simulation")
+plt.plot(x_list, y_anal(x_list, x0, y0, vx0, vy0), label="analytic solution")
 plt.xlabel("x (m)")
 plt.ylabel("y (m)")
 plt.title(f"Trajectory with time step {DT}")
+plt.legend()
 plt.grid(True)
 plt.savefig("Trajectory.png")
 
@@ -116,7 +131,29 @@ plt.title("Energies vs Time")
 plt.legend()
 plt.grid(True)
 plt.savefig("Energies_Time.png")
+plt.show()
 
+
+
+"""Investigate the convergence scale as a function of time step"""
+
+time_step = np.logspace(0, -5, num=10)
+x_anal = x_final(x0, y0, vx0, vy0)
+diff_list = []
+
+for tau in time_step:
+    t, x, y, vx, vy, pe, ke, e = simulate(c=0, dt=tau)
+    diff = x[-1] - x_anal
+    diff_list.append(diff)
+
+
+plt.figure()
+plt.loglog(time_step, diff_list)
+plt.xlabel("time step (s)")
+plt.ylabel("difference in x coordinate at landing point (m)")
+plt.title("Discrepancy in simulation and analytic solution")
+plt.grid(True)
+plt.savefig("Diff_Step.png")
 plt.show()
 
 
